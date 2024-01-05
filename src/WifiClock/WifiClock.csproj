@@ -11,7 +11,7 @@
 	  <PackageReference Include="Meadow.Foundation.Displays.Max7219" Version="*" />  
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Meadow.ProjectLab\Meadow.ProjectLab.csproj" />
+    <ProjectReference Include="..\Meadow.ProjectLab\Meadow.ProjectLab.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="meadow.config.yaml">

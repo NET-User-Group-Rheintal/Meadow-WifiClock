@@ -5,7 +5,7 @@ VisualStudioVersion = 17.8.34330.188
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WifiClock", "WifiClock\WifiClock.csproj", "{F2D6A977-D660-4E63-9EA9-4A690A783A72}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.ProjectLab", "..\Meadow.ProjectLab\Meadow.ProjectLab.csproj", "{87A11C2D-4664-4ED6-B6AC-C20631B081BB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meadow.ProjectLab", "Meadow.ProjectLab\Meadow.ProjectLab.csproj", "{87A11C2D-4664-4ED6-B6AC-C20631B081BB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
