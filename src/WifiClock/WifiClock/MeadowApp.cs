@@ -3,63 +3,65 @@ using Meadow.Devices;
 using Meadow.Foundation;
 using Meadow.Foundation.Displays;
 using Meadow.Foundation.Graphics;
-using Meadow.Foundation.Leds;
 using Meadow.Foundation.Sensors.Buttons;
 using Meadow.Foundation.Sensors.Temperature;
-using Meadow.Gateway.WiFi;
 using Meadow.Hardware;
+using Meadow.Units;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace WifiClock
 {
-    // public class MeadowApp : App<F7FeatherV1> <- If you have a Meadow F7v1.*
-    public class MeadowApp : App<F7FeatherV2>
+    public class MeadowApp : App<F7CoreComputeV2>
     {
-        PushButton pushButton;
         MicroGraphics graphics;
-        AnalogTemperature analogTemperature;
+        private IProjectLabHardware _projLab;
 
         bool showDate;
 
         public override async Task Initialize()
-        { 
-            var onboardLed = new RgbPwmLed(
-                redPwmPin: Device.Pins.OnboardLedRed,
-                greenPwmPin: Device.Pins.OnboardLedGreen,
-                bluePwmPin: Device.Pins.OnboardLedBlue);
-            onboardLed.SetColor(Color.Red);
+        {
+            //==== instantiate the project lab hardware
+            _projLab = ProjectLab.Create();
 
             var display = new Max7219(
-                spiBus: Device.CreateSpiBus(), 
-                chipSelectPin: Device.Pins.D01, 
-                deviceCount: 4, 
+                spiBus: Device.CreateSpiBus(Device.Pins.SPI5_SCK,
+                                            Device.Pins.SPI5_COPI,
+                                            Device.Pins.SPI5_CIPO),
+                chipSelectPin: Device.Pins.D14,
+                deviceCount: 4,
                 maxMode: Max7219.Max7219Mode.Display);
-            graphics = new MicroGraphics(display);
-            graphics.CurrentFont = new Font4x8();
-            graphics.Rotation = RotationType._180Degrees;
+
+            graphics = new MicroGraphics(display)
+            {
+                CurrentFont = new Font4x8(),
+                Rotation = RotationType._180Degrees
+            };
+
+            //---- BME688 Atmospheric sensor
+            if (_projLab.EnvironmentalSensor is { } bme688)
+            {
+                bme688.StartUpdating(TimeSpan.FromSeconds(5));
+            }
 
             graphics.Clear();
-            graphics.DrawText(0, 1,  "WI");
-            graphics.DrawText(0, 9,  "FI");
+            graphics.DrawText(0, 1, "WI");
+            graphics.DrawText(0, 9, "FI");
             graphics.DrawText(0, 17, "TI");
             graphics.DrawText(0, 25, "ME");
             graphics.Show();
 
-            pushButton = new PushButton(Device.Pins.D04, ResistorMode.InternalPullUp);
-            pushButton.Clicked += PushButtonClicked;
-
-            analogTemperature = new AnalogTemperature(
-                analogPin: Device.Pins.A00,
-                sensorType: AnalogTemperature.KnownSensorType.LM35
-            );
+            if (_projLab.DownButton is { } downButton)
+            {
+                downButton.Clicked += PushButtonClicked;
+            }
 
             var wifi = Device.NetworkAdapters.Primary<IWiFiNetworkAdapter>();
 
             await wifi.Connect(Secrets.WIFI_NAME, Secrets.WIFI_PASSWORD, TimeSpan.FromSeconds(45));
 
-            onboardLed.StartPulse(Color.Green);
+            _ = _projLab.RgbLed?.StartPulse(WildernessLabsColors.PearGreen);
         }
 
         void PushButtonClicked(object sender, EventArgs e)
@@ -69,11 +71,11 @@ namespace WifiClock
             showDate = false;
         }
 
-        public override async Task Run() 
+        public override Task Run()
         {
             while (true)
             {
-                DateTime clock = DateTime.Now.AddHours(-8);
+                DateTime clock = DateTime.Now.AddHours(+1);
 
                 graphics.Clear();
 
@@ -92,14 +94,15 @@ namespace WifiClock
 
                     graphics.DrawHorizontalLine(0, 24, 7, true);
 
-                    var temperature = await analogTemperature.Read();
+                    var temperature = $"{_projLab.EnvironmentalSensor.Conditions.Temperature.Value.Celsius}";
 
-                    graphics.DrawText(0, 26, $"{(int) temperature.Celsius}");
+                    graphics.DrawText(0, 26, temperature);
                 }
-                
+
                 graphics.Show();
                 Thread.Sleep(1000);
             }
         }
+ 
     }
 }
